@@ -23,12 +23,87 @@
       <input type="text" name="item" placeholder="Item Name" required>
       <input type="submit" value="+ Add Item">
     </form>
+    <button class="check">check all</button>
+    <button class="uncheck">uncheck all</button>
   </div>
 
 <script>
   const addItems = document.querySelector('.add-items');
   const itemsList = document.querySelector('.plates');
-  const items = [];
+  //if page had stored data we use it, if not use an empty array
+  const items = JSON.parse(localStorage.getItem('items')) || [];
+
+  const check = document.querySelector(".check");
+  const uncheck = document.querySelector(".uncheck");
+  
+  function addItem(e){
+//this way it doesn't refresh page on submit since we are doing all work on client side
+    e.preventDefault();
+//grab input from this input box that has a name value of item
+    const text = (this.querySelector("[name=item]")).value;
+    const item = {
+      text: text,
+      done: false
+    };
+    //to add our sumbitted input to the array we created before
+    items.push(item);
+    populateList(items, itemsList);
+    //can store only strings in local storage so must translate using JSON.stringify
+    localStorage.setItem('items', JSON.stringify(items));
+    //to clear input box after submit
+    this.reset();
+}
+
+//NOTE: everytime this fn is run it repopulates the entire list! could have performance issues
+//instead of using the variables we defined earlier we use these so this fn can be used with other data
+function populateList(plates = [], platesList) {
+//map takes in array and returns something done to it, in this case we return as strings using ``
+  platesList.innerHTML = plates.map((plate, i) =>{
+    return `
+    <li>
+      <input type="checkbox" data-index=${i} id="item${i}" ${plate.done ? 'checked' : ''} />
+      <label for="item${i}">${plate.text}</label>
+    </li>
+    `;
+    //takes the array made by map and joins into one big string
+  }).join('');
+}
+
+function toggleDone(e) {
+  if (!e.target.matches('input')) return; //skip this unless it is an input
+  const element = e.target;
+  const index = element.dataset.index;
+  items[index].done = !items[index].done;
+  localStorage.setItem('items', JSON.stringify(items));
+  populateList(items, itemsList);
+}
+
+function checkAll(){
+  items.forEach(item => {
+    item.done = true;
+  });
+  localStorage.setItem('items', JSON.stringify(items));
+  populateList(items, itemsList);
+}
+
+function uncheckAll() {
+  items.forEach(item => {
+    item.done = false;
+  });
+  localStorage.setItem('items', JSON.stringify(items));
+  populateList(items, itemsList);
+
+}
+  check.addEventListener("click", checkAll);
+  uncheck.addEventListener("click", uncheckAll);
+
+  addItems.addEventListener("submit", addItem);
+  //we are listening for a click on the ul items list because it will always exist on the page
+  //think of this delegation as responsible parents telling negligent children how to behave with the event
+  itemsList.addEventListener('click', toggleDone);
+
+  //on page load
+  populateList(items, itemsList);
 
 </script>
 
